@@ -32,7 +32,7 @@ async def fetch(session, url):
         return await response.text()
 
 
-async def process_article(article):
+async def process_article(article, articles_stat):
     async with aiohttp.ClientSession() as session:
         html = await fetch(session, article)
         clean_plaintext = inosmi.sanitize(html, plaintext=True)
@@ -41,16 +41,22 @@ async def process_article(article):
         article_words = text_tools.split_by_words(morph, clean_plaintext)
 
         charged_words = await read_words_from_file('./negative_words.txt')
-        raiting = text_tools.calculate_jaundice_rate(article_words, charged_words)
+        rating = text_tools.calculate_jaundice_rate(article_words, charged_words)
 
-        print(f'URL: {article}')
-        print(f'Рейтинг: {raiting}\nСлов в статье: {len(article_words)}\n')
+        articles_stat[article] = rating, len(article_words)
 
 
 async def main():
+    articles_stat = {}
     async with create_task_group() as tg:
         for article in TEST_ARCTICLES:
-            tg.start_soon(process_article, article)
+            tg.start_soon(process_article, article, articles_stat)
+
+    for article, stats in articles_stat.items():
+        print(f'URL: {article:}')
+        rating, words = stats
+        print(f'Рейтинг: {rating}')
+        print(f'Слов в статье: {words}\n')
 
 
 if __name__ == '__main__':

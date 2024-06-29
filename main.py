@@ -3,9 +3,18 @@ import asyncio
 import aiofiles
 import aiohttp
 import pymorphy2
+from anyio import create_task_group
 
 import adapters.inosmi_ru as inosmi
 import text_tools
+
+
+TEST_ARCTICLES = ['https://inosmi.ru/20240628/drevnie-lyudi-269349491.html',
+                  'https://inosmi.ru/20240629/kulisy-269369858.html',
+                  'https://inosmi.ru/20240629/assanzh-269370889.html',
+                  'https://inosmi.ru/20240629/evropa-269369358.html',
+                  'https://inosmi.ru/20240629/top-10-269368880.html',
+                  'https://inosmi.ru/20240629/byudzhet-269368449.html', ]
 
 
 async def read_words_from_file(file_path):
@@ -23,9 +32,9 @@ async def fetch(session, url):
         return await response.text()
 
 
-async def main():
+async def process_article(article):
     async with aiohttp.ClientSession() as session:
-        html = await fetch(session, 'https://inosmi.ru/20240628/drevnie-lyudi-269349491.html')
+        html = await fetch(session, article)
         clean_plaintext = inosmi.sanitize(html, plaintext=True)
 
         morph = pymorphy2.MorphAnalyzer()
@@ -34,6 +43,15 @@ async def main():
         charged_words = await read_words_from_file('./negative_words.txt')
         raiting = text_tools.calculate_jaundice_rate(article_words, charged_words)
 
-        print(f'Рейтинг: {raiting}\nСлов в статье: {len(article_words)}')
+        print(f'URL: {article}')
+        print(f'Рейтинг: {raiting}\nСлов в статье: {len(article_words)}\n')
 
-asyncio.run(main())
+
+async def main():
+    async with create_task_group() as tg:
+        for article in TEST_ARCTICLES:
+            tg.start_soon(process_article, article)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())

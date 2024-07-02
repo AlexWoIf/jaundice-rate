@@ -20,7 +20,6 @@ async def handle(request, morph):
     urls_text = request.rel_url.query.get('urls')
     urls = urls_text.split(',') if urls_text else []
     if len(urls) > MAX_URLS:
-        print(f'{len(urls)=}')
         raise web.HTTPBadRequest(text='{"error": "too many urls in request, '
                                  f'should be {MAX_URLS} or less"}}',
                                  content_type="application/json")
@@ -29,7 +28,6 @@ async def handle(request, morph):
         for article in urls:
             tg.start_soon(urls_handler.process_article, article, articles_stat, morph)
     response = prepare_response(articles_stat)
-    print(response)
     return web.json_response(response)
 
 

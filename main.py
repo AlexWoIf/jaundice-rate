@@ -59,7 +59,7 @@ async def use_timer(article, articles_stat):
                                                                  [None]*4)
         if duration is None:
             duration = time.monotonic() - start_time
-            articles_stat[article] = status, rating, word_count, duration
+            articles_stat[article] = [status, rating, word_count, duration]
 
 
 async def process_article(article, articles_stat, morph):
@@ -84,13 +84,13 @@ async def process_article(article, articles_stat, morph):
                     word_count = len(article_words)
                     duration = time.monotonic() - start_time
                     articles_stat[article] = \
-                        status, rating, word_count, duration
+                        [status, rating, word_count, duration]
             except aiohttp.ClientResponseError:
                 status = ProcessingStatus.FETCH_ERROR
-                articles_stat[article] = status, None, None, None
+                articles_stat[article] = [status, None, None, None]
             except ArticleNotFound:
                 status = ProcessingStatus.PARSING_ERROR
-                articles_stat[article] = status, None, None, None
+                articles_stat[article] = [status, None, None, None]
             except asyncio.TimeoutError:
                 status = ProcessingStatus.TIMEOUT
                 articles_stat[article] = status, None, None, None
